@@ -26,4 +26,4 @@ jobs:
           command: yarn build
       - run:
           name: Deploy
-          command: surge --project ./build --domain ${CIRCLE_BRANCH}-networklab.surge.sh
+          command: ./node_modules/.bin/surge --project ./build --domain ${CIRCLE_BRANCH}-networklab.surge.sh
