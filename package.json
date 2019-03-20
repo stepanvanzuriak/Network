@@ -12,7 +12,7 @@
     "build": "react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject",
-    "surge": "surge --project ./build --domain dev-networklab.surge.sh",
+    "surge": "surge --project ./build --domain networklab.surge.sh",
     "deploy": "npm run build && npm run surge"
   },
   "eslintConfig": {
