@@ -22,5 +22,8 @@ jobs:
           key: v1-dependencies-{{ checksum "package.json" }}
 
       - run:
+          name: Build
+          command: yarn build
+      - run:
           name: Deploy
-          command: yarn deploy
+          command: ./node_modules/.bin/surge --project ./build --domain ${CIRCLE_BRANCH}-networklab.surge.sh
