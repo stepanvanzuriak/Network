@@ -1,22 +1,90 @@
-import React from 'react';
-import logo from './logo.svg';
+import React, { useState } from 'react';
+import ReactTable from 'react-table';
+import withFixedColumns from 'react-table-hoc-fixed-columns';
+
+import locale from './locale.json';
+
 import './App.css';
 
-const App = () => (
-  <div className="App">
-    <header className="App-header">
-      <img src={logo} className="App-logo" alt="logo" />
-      <p>Develop version 2</p>
-      <p>
-        Edit
-        <code>src/App.js</code>
-        and save to reload.
-      </p>
-      <a className="App-link" href="https://reactjs.org" target="_blank" rel="noopener noreferrer">
-        Learn React
-      </a>
-    </header>
-  </div>
-);
+const addToArray = (array, size, func = value => value) => {
+  const resultArray = [...array];
+  for (let i = 0; i < size; i++) {
+    resultArray.push(func(i));
+  }
+
+  return resultArray;
+};
+
+const fixedFirst = array => {
+  const resultArray = [...array];
+  resultArray[0].fixed = 'left';
+  resultArray[0].Header = '';
+
+  return resultArray;
+};
+
+const ReactTableFixedColumns = withFixedColumns(ReactTable);
+
+const App = () => {
+  const [count, setCount] = useState('');
+  const [columns, setColumns] = useState([]);
+  const [firstData, setFirstData] = useState([]);
+
+  const columnsLength = columns.length;
+  const showTable = Boolean(columnsLength);
+
+  const changeCount = e => {
+    const value = Number(e.target.value) + 1;
+    setCount(e.target.value);
+    // TODO: ADD SOME WARNING ABOUT POSIBLE BROWSER FREEZE
+    if (value < 100) {
+      if (value > columnsLength) {
+        const diff = value - columnsLength;
+        const valueArray = new Array(value).fill(null);
+
+        setColumns(
+          fixedFirst(
+            addToArray(columns, diff, index => ({
+              Header: `${columnsLength + index}`,
+              accessor: `${columnsLength + index}`,
+              style: { textAlign: 'center' }
+            }))
+          )
+        );
+        setFirstData(
+          addToArray(firstData, diff - 1).map((row, index) => {
+            const result = {};
+
+            valueArray.forEach((_, i) => {
+              result[i + 1] = <input />;
+            });
+
+            result['0'] = index + 1;
+
+            return result;
+          })
+        );
+      } else {
+        setColumns(columns.slice(0, value));
+        setFirstData(firstData.slice(0, value));
+      }
+    }
+  };
+
+  return (
+    <div className="App">
+      {locale.PointsCount}: <input value={count} onChange={changeCount} />
+      {showTable && (
+        <ReactTableFixedColumns
+          minRows={1}
+          data={firstData}
+          columns={columns}
+          defaultPageSize={10}
+          className="-striped"
+        />
+      )}
+    </div>
+  );
+};
 
 export default App;
