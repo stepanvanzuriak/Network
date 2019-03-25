@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import ReactTable from 'react-table';
 import withFixedColumns from 'react-table-hoc-fixed-columns';
 
@@ -23,12 +23,34 @@ const fixedFirst = array => {
   return resultArray;
 };
 
+const createInputsList = tableData => {
+  const list = [];
+  tableData.forEach(item => {
+    list.push(
+      Object.values(item)
+        .filter(e => e.props)
+        .map(({ props: { id, value } }) => ({ id, value }))
+    );
+  });
+  return list;
+};
+
 const ReactTableFixedColumns = withFixedColumns(ReactTable);
 
 const App = () => {
   const [count, setCount] = useState('');
   const [columns, setColumns] = useState([]);
   const [firstData, setFirstData] = useState([]);
+  const [inputsList, setInputsList] = useState(null);
+
+  useEffect(() => {
+    /* 
+        it`s a little bit a late time, so i can`t think clear and find the way to fix problem with
+        losing out values in inputsList when we make our table bigger :(
+      */
+    const newInputsArr = createInputsList(firstData);
+    setInputsList(newInputsArr);
+  }, [count]);
 
   const columnsLength = columns.length;
   const showTable = Boolean(columnsLength);
@@ -56,7 +78,12 @@ const App = () => {
             const result = {};
 
             valueArray.forEach((_, i) => {
-              result[i + 1] = <input />;
+              result[i + 1] = (
+                <input
+                  id={`${index}/${i}`}
+                  onChange={event => handleInputChange(index, i, event.target.value)}
+                />
+              );
             });
 
             result['0'] = index + 1;
@@ -71,9 +98,20 @@ const App = () => {
     }
   };
 
+  const handleInputChange = (row, cell, value) => {
+    setInputsList(list => {
+      const element = list[row][cell];
+      element.value = value;
+      return [...list];
+    });
+  };
+
   return (
     <div className="App">
-      {locale.PointsCount}: <input value={count} onChange={changeCount} />
+      <div>
+        <span>{locale.PointsCount}:</span>
+        <input value={count} onChange={changeCount} />
+      </div>
       {showTable && (
         <ReactTableFixedColumns
           minRows={1}
