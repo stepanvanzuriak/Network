@@ -1,10 +1,21 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import ReactTable from 'react-table';
 import withFixedColumns from 'react-table-hoc-fixed-columns';
+import Graph from 'react-graph-vis';
 
 import locale from './locale.json';
 
 import './App.css';
+
+const options = {
+  layout: {
+    hierarchical: false
+  },
+  edges: {
+    color: '#000000'
+  },
+  height: '500px'
+};
 
 const addToArray = (array, size, func = value => value) => {
   const resultArray = [...array];
@@ -15,6 +26,17 @@ const addToArray = (array, size, func = value => value) => {
   return resultArray;
 };
 
+const createMatrix = size => {
+  const matrix = [];
+  for (let i = 0; i < size; i++) {
+    matrix[i] = [];
+    for (let j = 0; j < size; j++) {
+      matrix[i][j] = {};
+    }
+  }
+  return matrix;
+};
+
 const fixedFirst = array => {
   const resultArray = [...array];
   resultArray[0].fixed = 'left';
@@ -23,34 +45,27 @@ const fixedFirst = array => {
   return resultArray;
 };
 
-const createInputsList = tableData => {
-  const list = [];
-  tableData.forEach(item => {
-    list.push(
-      Object.values(item)
-        .filter(e => e.props)
-        .map(({ props: { id, value } }) => ({ id, value }))
-    );
-  });
-  return list;
-};
-
 const ReactTableFixedColumns = withFixedColumns(ReactTable);
 
 const App = () => {
-  const [count, setCount] = useState('');
+  const [count, setCount] = useState(0);
   const [columns, setColumns] = useState([]);
   const [firstData, setFirstData] = useState([]);
-  const [inputsList, setInputsList] = useState(null);
+  const [inputsList, setInputsList] = useState([]);
 
-  useEffect(() => {
-    /* 
-        it`s a little bit a late time, so i can`t think clear and find the way to fix problem with
-        losing out values in inputsList when we make our table bigger :(
-      */
-    const newInputsArr = createInputsList(firstData);
-    setInputsList(newInputsArr);
-  }, [count]);
+  const values = { nodes: [], edges: [] };
+
+  inputsList.map(e =>
+    e
+      .filter(({ value }) => value)
+      .map(({ id, value }) => {
+        const [start, end] = id.split('/');
+
+        values.nodes.push({ id: start, label: start });
+        values.nodes.push({ id: end, label: end });
+        values.edges.push({ from: start, to: end, label: value });
+      })
+  );
 
   const columnsLength = columns.length;
   const showTable = Boolean(columnsLength);
@@ -58,6 +73,9 @@ const App = () => {
   const changeCount = e => {
     const value = Number(e.target.value) + 1;
     setCount(e.target.value);
+
+    setInputsList(createMatrix(+e.target.value));
+
     // TODO: ADD SOME WARNING ABOUT POSIBLE BROWSER FREEZE
     if (value < 100) {
       if (value > columnsLength) {
@@ -78,10 +96,11 @@ const App = () => {
             const result = {};
 
             valueArray.forEach((_, i) => {
+              const id = `${index + 1}/${i + 1}`;
               result[i + 1] = (
                 <input
-                  id={`${index}/${i}`}
-                  onChange={event => handleInputChange(index, i, event.target.value)}
+                  id={id}
+                  onChange={event => handleInputChange(index, i, event.target.value, id)}
                 />
               );
             });
@@ -98,10 +117,12 @@ const App = () => {
     }
   };
 
-  const handleInputChange = (row, cell, value) => {
+  const handleInputChange = (row, cell, value, id) => {
     setInputsList(list => {
       const element = list[row][cell];
       element.value = value;
+      element.id = id;
+
       return [...list];
     });
   };
@@ -113,13 +134,17 @@ const App = () => {
         <input value={count} onChange={changeCount} />
       </div>
       {showTable && (
-        <ReactTableFixedColumns
-          minRows={1}
-          data={firstData}
-          columns={columns}
-          defaultPageSize={10}
-          className="-striped"
-        />
+        <>
+          <ReactTableFixedColumns
+            minRows={1}
+            data={firstData}
+            columns={columns}
+            defaultPageSize={10}
+            className="-striped"
+          />
+
+          <Graph graph={values} options={options} />
+        </>
       )}
     </div>
   );
