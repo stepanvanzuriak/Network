@@ -3,6 +3,7 @@ import ReactTable from 'react-table';
 import withFixedColumns from 'react-table-hoc-fixed-columns';
 import Graph from 'react-graph-vis';
 
+import calculate from './algorithm';
 import locale from './locale.json';
 
 import './App.css';
@@ -11,8 +12,14 @@ const options = {
   layout: {
     hierarchical: false
   },
+
+  autoResize: true,
   edges: {
-    color: '#000000'
+    color: '#000000',
+
+    smooth: {
+      type: 'cubicBezier'
+    }
   },
   height: '500px'
 };
@@ -49,58 +56,62 @@ const ReactTableFixedColumns = withFixedColumns(ReactTable);
 
 const App = () => {
   const [count, setCount] = useState(0);
+  const [startPoint, setStartPoint] = useState(0);
   const [columns, setColumns] = useState([]);
   const [firstData, setFirstData] = useState([]);
   const [inputsList, setInputsList] = useState([]);
+  const [mutValues, setMutValues] = useState({ nodes: [], edges: [], update: false });
 
   const values = { nodes: [], edges: [] };
+  const columnsLength = columns.length;
+  const showTable = Boolean(columnsLength);
 
-  inputsList.map(e =>
-    e
+  inputsList.forEach(row =>
+    row
       .filter(({ value }) => value)
-      .map(({ id, value }) => {
+      .forEach(({ id, value }) => {
         const [start, end] = id.split('/');
+        const startElement = { id: start, label: start };
+        const endElement = { id: end, label: end };
 
-        values.nodes.push({ id: start, label: start });
-        values.nodes.push({ id: end, label: end });
+        if (start === end) {
+          values.nodes.push(startElement);
+        } else {
+          if (!values.nodes.some(({ id: eID }) => eID === startElement.id)) {
+            values.nodes.push(startElement);
+          }
+
+          if (!values.nodes.some(({ id: eID }) => eID === endElement.id)) {
+            values.nodes.push(endElement);
+          }
+        }
+
         values.edges.push({ from: start, to: end, label: value });
       })
   );
 
-  const columnsLength = columns.length;
-  const showTable = Boolean(columnsLength);
+  const changeCount = ({ target: { value: inputValue } }) => {
+    const value = Number(inputValue);
 
-  const changeCount = e => {
-    const value = Number(e.target.value) + 1;
-    setCount(e.target.value);
-
-    setInputsList(createMatrix(+e.target.value));
-
-    // TODO: ADD SOME WARNING ABOUT POSIBLE BROWSER FREEZE
+    // TODO: ADD SOME WARNING ABOUT POSSIBLE BROWSER FREEZE
     if (value < 100) {
       if (value > columnsLength) {
         const diff = value - columnsLength;
+        const dataDiff = value - firstData.length;
         const valueArray = new Array(value).fill(null);
 
-        setColumns(
-          fixedFirst(
-            addToArray(columns, diff, index => ({
-              Header: `${columnsLength + index}`,
-              accessor: `${columnsLength + index}`,
-              style: { textAlign: 'center' }
-            }))
-          )
-        );
         setFirstData(
-          addToArray(firstData, diff - 1).map((row, index) => {
+          addToArray(firstData, dataDiff).map((_, index) => {
             const result = {};
 
-            valueArray.forEach((_, i) => {
+            valueArray.forEach((__, i) => {
               const id = `${index + 1}/${i + 1}`;
               result[i + 1] = (
                 <input
                   id={id}
-                  onChange={event => handleInputChange(index, i, event.target.value, id)}
+                  onChange={({ target: { value: edgeValue } }) =>
+                    handleInputChange(index, i, edgeValue, id)
+                  }
                 />
               );
             });
@@ -110,11 +121,24 @@ const App = () => {
             return result;
           })
         );
+
+        setColumns(
+          fixedFirst(
+            addToArray(columns, diff + 1, index => ({
+              Header: `${columnsLength + index}`,
+              accessor: `${columnsLength + index}`,
+              style: { textAlign: 'center' }
+            }))
+          )
+        );
       } else {
-        setColumns(columns.slice(0, value));
+        setColumns(columns.slice(0, value + 1));
         setFirstData(firstData.slice(0, value));
       }
     }
+
+    setCount(inputValue);
+    setInputsList(createMatrix(Number(inputValue)));
   };
 
   const handleInputChange = (row, cell, value, id) => {
@@ -127,11 +151,26 @@ const App = () => {
     });
   };
 
+  const changeStartPoint = ({ target: { value } }) => setStartPoint(Number(value));
+
+  const startAlgorithm = () => {
+    setMutValues(calculate(values, startPoint));
+  };
+
+  const visValues = mutValues.update ? mutValues : values;
+
   return (
     <div className="App">
       <div>
         <span>{locale.PointsCount}:</span>
         <input value={count} onChange={changeCount} />
+      </div>
+      <div>
+        <span>{locale.StartPoint}:</span>
+        <input value={startPoint} onChange={changeStartPoint} />
+        <button disabled={!startPoint} type="button" onClick={startAlgorithm}>
+          {locale.StartVisualization}
+        </button>
       </div>
       {showTable && (
         <>
@@ -143,7 +182,7 @@ const App = () => {
             className="-striped"
           />
 
-          <Graph graph={values} options={options} />
+          <Graph graph={visValues} options={options} />
         </>
       )}
     </div>

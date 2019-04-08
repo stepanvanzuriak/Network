@@ -1,3 +1,5 @@
 {
-  "PointsCount": "Кількість точок"
+  "PointsCount": "Кількість точок",
+  "StartPoint": "Початкова точка",
+  "StartVisualization": "Почати візуалізацію"
 }
