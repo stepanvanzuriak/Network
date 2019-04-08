@@ -10,13 +10,11 @@ import './App.css';
 
 const options = {
   layout: {
-    hierarchical: false
+    hierarchical: false,
+    randomSeed: 42
   },
-
   autoResize: true,
   edges: {
-    color: '#000000',
-
     smooth: {
       type: 'cubicBezier'
     }
@@ -60,7 +58,7 @@ const App = () => {
   const [columns, setColumns] = useState([]);
   const [firstData, setFirstData] = useState([]);
   const [inputsList, setInputsList] = useState([]);
-  const [mutValues, setMutValues] = useState({ nodes: [], edges: [], update: false });
+  const [network, setNetwork] = useState(undefined);
 
   const values = { nodes: [], edges: [] };
   const columnsLength = columns.length;
@@ -86,7 +84,11 @@ const App = () => {
           }
         }
 
-        values.edges.push({ from: start, to: end, label: value });
+        values.edges.push({
+          from: start,
+          to: end,
+          label: value
+        });
       })
   );
 
@@ -139,6 +141,9 @@ const App = () => {
 
     setCount(inputValue);
     setInputsList(createMatrix(Number(inputValue)));
+    if (network) {
+      network.setData(values);
+    }
   };
 
   const handleInputChange = (row, cell, value, id) => {
@@ -149,15 +154,23 @@ const App = () => {
 
       return [...list];
     });
+
+    if (network) {
+      network.setData(values);
+    }
   };
 
-  const changeStartPoint = ({ target: { value } }) => setStartPoint(Number(value));
+  const changeStartPoint = ({ target: { value } }) => {
+    setStartPoint(Number(value));
+  };
 
   const startAlgorithm = () => {
-    setMutValues(calculate(values, startPoint));
-  };
+    const newValue = calculate(values, startPoint);
 
-  const visValues = mutValues.update ? mutValues : values;
+    if (network) {
+      network.setData(newValue);
+    }
+  };
 
   return (
     <div className="App">
@@ -182,7 +195,7 @@ const App = () => {
             className="-striped"
           />
 
-          <Graph graph={visValues} options={options} />
+          <Graph graph={values} getNetwork={setNetwork} options={options} />
         </>
       )}
     </div>

@@ -1,5 +1,6 @@
 const calculate = (values, startPoint) => {
   const { edges, nodes } = values;
+  let resEdges = edges;
 
   const visited = [String(startPoint)];
   const prices = {
@@ -23,10 +24,26 @@ const calculate = (values, startPoint) => {
   while (visited.length < nodes.length) {
     const possiblePaths = edges.filter(findPath);
 
-    const [minCost, next] = possiblePaths.reduce(findMinCost, [Number.MAX_SAFE_INTEGER]);
+    const [minCost, next, from] = possiblePaths.reduce(findMinCost, [Number.MAX_SAFE_INTEGER]);
 
     if (next) {
       prices[next] = minCost;
+
+      resEdges = resEdges.map(e => {
+        const { from: f, to } = e;
+        if (f === from && to === next) {
+          return {
+            ...e,
+            color: {
+              color: 'red',
+              highlight: 'red'
+            }
+          };
+        }
+
+        return e;
+      });
+
       visited.push(next);
     } else {
       break;
@@ -34,12 +51,11 @@ const calculate = (values, startPoint) => {
   }
 
   return {
-    edges,
+    edges: resEdges,
     nodes: nodes.map(node => ({
       ...node,
       label: prices[node.label] ? `${node.label}(${prices[node.label]})` : node.label
-    })),
-    update: true
+    }))
   };
 };
 
