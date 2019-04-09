@@ -50,6 +50,8 @@ const fixedFirst = array => {
   return resultArray;
 };
 
+const uniqueArray = a => [...new Set(a.map(o => JSON.stringify(o)))].map(s => JSON.parse(s));
+
 const ReactTableFixedColumns = withFixedColumns(ReactTable);
 
 const App = () => {
@@ -84,6 +86,8 @@ const App = () => {
           }
         }
 
+        //
+        values.nodes = uniqueArray(values.nodes);
         values.edges.push({
           from: start,
           to: end,
