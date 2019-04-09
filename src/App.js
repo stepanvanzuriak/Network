@@ -174,14 +174,16 @@ const App = () => {
 
   return (
     <div className="App">
-      <div>
-        <span>{locale.PointsCount}:</span>
-        <input value={count} onChange={changeCount} />
-      </div>
-      <div>
-        <span>{locale.StartPoint}:</span>
-        <input value={startPoint} onChange={changeStartPoint} />
-        <button disabled={!startPoint} type="button" onClick={startAlgorithm}>
+      <div className="wrap">
+        <div className="inputWrap">
+          <span className="label">{locale.PointsCount}:</span>
+          <input value={count} onChange={changeCount} />
+        </div>
+        <div className="inputWrap">
+          <span className="label">{locale.StartPoint}:</span>
+          <input value={startPoint} onChange={changeStartPoint} />
+        </div>
+        <button disabled={!startPoint} type="button" onClick={startAlgorithm} className="submitBtn">
           {locale.StartVisualization}
         </button>
       </div>

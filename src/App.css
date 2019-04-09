@@ -1,3 +1,40 @@
 .ReactTable {
   margin-top: 16px;
 }
+
+.wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 20px 0;
+}
+
+.inputWrap {
+  padding-bottom: 30px;
+}
+
+.label {
+  font-family: Arial;
+  padding-right: 20px;
+}
+
+.submitBtn {
+  border: 0;
+  border-radius: 3px;
+  padding: 10px;
+  font-size: 1em;
+  color: rgba(0, 0, 0, 0.6);
+  background: rgba(0, 0, 0, 0.1);
+  cursor: pointer;
+  outline: none;
+}
+
+.submitBtn[disabled] {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.submitBtn:hover:enabled {
+  background: rgba(0, 0, 0, 0.3);
+  color: #fff;
+}
