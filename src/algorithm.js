@@ -37,6 +37,9 @@ const calculate = (values, startPoint) => {
             color: {
               color: 'red',
               highlight: 'red'
+            },
+            arrows: {
+              to: { enabled: true, scaleFactor: 1, type: 'arrow' }
             }
           };
         }

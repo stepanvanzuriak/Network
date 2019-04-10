@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import ReactTable from 'react-table';
 import withFixedColumns from 'react-table-hoc-fixed-columns';
 import Graph from 'react-graph-vis';
@@ -7,6 +7,7 @@ import calculate from './algorithm';
 import locale from './locale.json';
 
 import './App.css';
+import { addToArray, fixedFirst, createMatrix } from './utils';
 
 const options = {
   layout: {
@@ -17,42 +18,24 @@ const options = {
   edges: {
     smooth: {
       type: 'cubicBezier'
+    },
+    arrows: {
+      to: { enabled: false, scaleFactor: 1, type: 'arrow' },
+      middle: { enabled: false, scaleFactor: 1, type: 'arrow' },
+      from: { enabled: false, scaleFactor: 1, type: 'arrow' }
     }
   },
   height: '500px'
 };
 
-const addToArray = (array, size, func = value => value) => {
-  const resultArray = [...array];
-  for (let i = 0; i < size; i++) {
-    resultArray.push(func(i));
-  }
-
-  return resultArray;
-};
-
-const createMatrix = size => {
-  const matrix = [];
-  for (let i = 0; i < size; i++) {
-    matrix[i] = [];
-    for (let j = 0; j < size; j++) {
-      matrix[i][j] = {};
-    }
-  }
-  return matrix;
-};
-
-const fixedFirst = array => {
-  const resultArray = [...array];
-  resultArray[0].fixed = 'left';
-  resultArray[0].Header = '';
-
-  return resultArray;
-};
+const fileReader = new FileReader();
 
 const ReactTableFixedColumns = withFixedColumns(ReactTable);
+const values = { nodes: [], edges: [] };
 
 const App = () => {
+  const [defaultTableData, setDefaultTableData] = useState({});
+  const [file, setFileData] = useState({});
   const [count, setCount] = useState(0);
   const [startPoint, setStartPoint] = useState(0);
   const [columns, setColumns] = useState([]);
@@ -60,37 +43,96 @@ const App = () => {
   const [inputsList, setInputsList] = useState([]);
   const [network, setNetwork] = useState(undefined);
 
-  const values = { nodes: [], edges: [] };
   const columnsLength = columns.length;
   const showTable = Boolean(columnsLength);
 
-  inputsList.forEach(row =>
-    row
-      .filter(({ value }) => value)
-      .forEach(({ id, value }) => {
-        const [start, end] = id.split('/');
-        const startElement = { id: start, label: start };
-        const endElement = { id: end, label: end };
+  fileReader.onload = e => {
+    setFileData(JSON.parse(e.target.result));
+  };
 
-        if (start === end) {
-          values.nodes.push(startElement);
-        } else {
-          if (!values.nodes.some(({ id: eID }) => eID === startElement.id)) {
-            values.nodes.push(startElement);
-          }
+  useEffect(() => {
+    if (Object.keys(file).length) {
+      setDefaultTableData(
+        file.edges.reduce((acc, edge) => ({ ...acc, [`${edge.from}:${edge.to}`]: edge.value }), {})
+      );
+    }
+  }, [file]);
 
-          if (!values.nodes.some(({ id: eID }) => eID === endElement.id)) {
-            values.nodes.push(endElement);
-          }
+  useEffect(() => {
+    if (Object.keys(file).length) {
+      changeCount({ target: { value: file.nodes.length } });
+      setStartPoint(file.startPoint);
+
+      file.nodes.forEach(node => {
+        if (!values.nodes.some(({ id }) => id === node)) {
+          values.nodes.push({ id: node, label: node });
         }
+      });
+      file.edges.forEach(edge => {
+        if (!values.edges.some(({ from, to }) => from === edge.from && to === edge.to)) {
+          values.edges.push({
+            from: edge.from,
+            to: edge.to,
+            label: `${edge.value}`
+          });
+        } else {
+          values.edges = values.edges.map(e => {
+            const { from, to } = e;
+            if (from === edge.from && to === edge.to) {
+              return { ...e, label: `${edge.value}` };
+            }
 
-        values.edges.push({
-          from: start,
-          to: end,
-          label: value
-        });
-      })
-  );
+            return e;
+          });
+        }
+      });
+    }
+  }, [defaultTableData]);
+
+  useEffect(() => {
+    inputsList.forEach(row =>
+      row
+        .filter(({ value }) => value)
+        .forEach(({ id, value }) => {
+          const [start, end] = id.split('/');
+          const startElement = { id: start, label: start };
+          const endElement = { id: end, label: end };
+
+          if (start === end && !values.nodes.some(({ id: eID }) => eID === end)) {
+            values.nodes.push(startElement);
+          } else {
+            if (!values.nodes.some(({ id: eID }) => eID === start)) {
+              values.nodes.push(startElement);
+            }
+
+            if (!values.nodes.some(({ id: eID }) => eID === end)) {
+              values.nodes.push(endElement);
+            }
+          }
+
+          if (!values.edges.some(({ from, to }) => from === start && to === end)) {
+            values.edges.push({
+              from: start,
+              to: end,
+              label: value
+            });
+          } else {
+            values.edges = values.edges.map(edge => {
+              const { from, to } = edge;
+              if (from === start && to === end) {
+                return { ...edge, label: value };
+              }
+
+              return edge;
+            });
+          }
+        })
+    );
+
+    if (network) {
+      network.setData(values);
+    }
+  }, [inputsList]);
 
   const changeCount = ({ target: { value: inputValue } }) => {
     const value = Number(inputValue);
@@ -108,12 +150,14 @@ const App = () => {
 
             valueArray.forEach((__, i) => {
               const id = `${index + 1}/${i + 1}`;
+
               result[i + 1] = (
                 <input
                   id={id}
                   onChange={({ target: { value: edgeValue } }) =>
                     handleInputChange(index, i, edgeValue, id)
                   }
+                  defaultValue={defaultTableData[`${index + 1}:${i + 1}`]}
                 />
               );
             });
@@ -141,9 +185,6 @@ const App = () => {
 
     setCount(inputValue);
     setInputsList(createMatrix(Number(inputValue)));
-    if (network) {
-      network.setData(values);
-    }
   };
 
   const handleInputChange = (row, cell, value, id) => {
@@ -154,10 +195,6 @@ const App = () => {
 
       return [...list];
     });
-
-    if (network) {
-      network.setData(values);
-    }
   };
 
   const changeStartPoint = ({ target: { value } }) => {
@@ -186,6 +223,7 @@ const App = () => {
         <button disabled={!startPoint} type="button" onClick={startAlgorithm} className="submitBtn">
           {locale.StartVisualization}
         </button>
+        <input name="myFile" type="file" onChange={e => fileReader.readAsText(e.target.files[0])} />
       </div>
       {showTable && (
         <>
