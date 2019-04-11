@@ -7,7 +7,7 @@ import calculate from './algorithm';
 import locale from './locale.json';
 
 import './App.css';
-import { addToArray, fixedFirst, createMatrix } from './utils';
+import { addToArray, fixedFirst, createMatrix, createFileFormat } from './utils';
 
 const options = {
   layout: {
@@ -42,6 +42,7 @@ const App = () => {
   const [firstData, setFirstData] = useState([]);
   const [inputsList, setInputsList] = useState([]);
   const [network, setNetwork] = useState(undefined);
+  const [downFile, setDownFile] = useState(values);
 
   const columnsLength = columns.length;
   const showTable = Boolean(columnsLength);
@@ -64,8 +65,15 @@ const App = () => {
       setStartPoint(file.startPoint);
 
       file.nodes.forEach(node => {
-        if (!values.nodes.some(({ id }) => id === node)) {
-          values.nodes.push({ id: node, label: node });
+        if (typeof node === 'object') {
+          if (!values.nodes.some(({ id }) => id === node.id)) {
+            values.nodes.push({ id: node.id, label: node.label });
+          }
+        } else {
+          // eslint-disable-next-line no-lonely-if
+          if (!values.nodes.some(({ id }) => id === node)) {
+            values.nodes.push({ id: node, label: node });
+          }
         }
       });
       file.edges.forEach(edge => {
@@ -73,7 +81,9 @@ const App = () => {
           values.edges.push({
             from: edge.from,
             to: edge.to,
-            label: `${edge.value}`
+            label: `${edge.value}`,
+            color: edge.color,
+            arrows: edge.arrows
           });
         } else {
           values.edges = values.edges.map(e => {
@@ -86,6 +96,14 @@ const App = () => {
           });
         }
       });
+
+      setDownFile(
+        encodeURIComponent(
+          JSON.stringify(
+            createFileFormat({ nodes: values.nodes, edges: values.edges }, startPoint, count)
+          )
+        )
+      );
     }
   }, [defaultTableData]);
 
@@ -131,6 +149,13 @@ const App = () => {
 
     if (network) {
       network.setData(values);
+      setDownFile(
+        encodeURIComponent(
+          JSON.stringify(
+            createFileFormat({ nodes: values.nodes, edges: values.edges }, startPoint, count)
+          )
+        )
+      );
     }
   }, [inputsList]);
 
@@ -206,6 +231,13 @@ const App = () => {
 
     if (network) {
       network.setData(newValue);
+      setDownFile(
+        encodeURIComponent(
+          JSON.stringify(
+            createFileFormat({ nodes: newValue.nodes, edges: newValue.edges }, startPoint, count)
+          )
+        )
+      );
     }
   };
 
@@ -220,10 +252,27 @@ const App = () => {
           <span className="label">{locale.StartPoint}:</span>
           <input value={startPoint} onChange={changeStartPoint} />
         </div>
+
         <button disabled={!startPoint} type="button" onClick={startAlgorithm} className="submitBtn">
           {locale.StartVisualization}
         </button>
-        <input name="myFile" type="file" onChange={e => fileReader.readAsText(e.target.files[0])} />
+        <div style={{ display: 'inline-block' }}>
+          <input
+            style={{ display: 'inline-block' }}
+            className="file-input"
+            type="file"
+            onChange={e => fileReader.readAsText(e.target.files[0])}
+          />
+          {network && (
+            <a
+              style={{ display: 'inline-block' }}
+              href={`data:text/json;charset=utf-8,${downFile}`}
+              download="out.json"
+            >
+              DOWNLOAD DATA
+            </a>
+          )}
+        </div>
       </div>
       {showTable && (
         <>
@@ -231,7 +280,7 @@ const App = () => {
             minRows={1}
             data={firstData}
             columns={columns}
-            defaultPageSize={10}
+            defaultPageSize={5}
             className="-striped"
           />
 

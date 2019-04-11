@@ -25,3 +25,30 @@ export const fixedFirst = array => {
 
   return resultArray;
 };
+
+export const createFileFormat = (values, startPoint, nodeCount) => {
+  const file = { startPoint, nodeCount, nodes: [], edges: [] };
+
+  values.nodes.forEach(({ id, label }) => file.nodes.push({ id, label }));
+
+  values.edges.forEach(({ from, to, label, color, arrows }) => {
+    const result = {
+      from,
+      to,
+      value: label,
+
+      arrows
+    };
+    if (color) {
+      result.color = color;
+    }
+
+    if (arrows) {
+      result.arrows = arrows;
+    }
+
+    file.edges.push(result);
+  });
+
+  return file;
+};
