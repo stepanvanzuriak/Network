@@ -31,7 +31,7 @@ const options = {
 const fileReader = new FileReader();
 
 const ReactTableFixedColumns = withFixedColumns(ReactTable);
-const values = { nodes: [], edges: [] };
+let values = { nodes: [], edges: [] };
 
 const App = () => {
   const [defaultTableData, setDefaultTableData] = useState({});
@@ -56,6 +56,7 @@ const App = () => {
       setDefaultTableData(
         file.edges.reduce((acc, edge) => ({ ...acc, [`${edge.from}:${edge.to}`]: edge.value }), {})
       );
+      values = { nodes: [], edges: [] };
     }
   }, [file]);
 
