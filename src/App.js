@@ -3,7 +3,7 @@ import ReactTable from 'react-table';
 import withFixedColumns from 'react-table-hoc-fixed-columns';
 import Graph from 'react-graph-vis';
 
-import calculate from './algorithm';
+import calculate from './algorithm2';
 import locale from './locale.json';
 
 import './App.css';
@@ -46,6 +46,8 @@ const App = () => {
   const [inputsList, setInputsList] = useState([]);
   const [network, setNetwork] = useState(undefined);
   const [downFile, setDownFile] = useState(values);
+
+  console.log(file);
 
   const columnsLength = columns.length;
   const showTable = Boolean(columnsLength);
