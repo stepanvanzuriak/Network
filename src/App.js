@@ -11,8 +11,10 @@ import { addToArray, fixedFirst, createMatrix, createFileFormat } from './utils'
 
 const options = {
   layout: {
-    hierarchical: false,
-    randomSeed: 42
+    hierarchical: false
+  },
+  physics: {
+    enabled: false
   },
   autoResize: true,
   edges: {
@@ -25,6 +27,7 @@ const options = {
       from: { enabled: false, scaleFactor: 1, type: 'arrow' }
     }
   },
+
   height: '500px'
 };
 
@@ -184,6 +187,7 @@ const App = () => {
                     handleInputChange(index, i, edgeValue, id)
                   }
                   defaultValue={defaultTableData[`${index + 1}:${i + 1}`]}
+                  type="number"
                 />
               );
             });
@@ -247,11 +251,11 @@ const App = () => {
       <div className="wrap">
         <div className="inputWrap">
           <span className="label">{locale.PointsCount}:</span>
-          <input value={count} onChange={changeCount} />
+          <input value={count} onChange={changeCount} type="number" />
         </div>
         <div className="inputWrap">
           <span className="label">{locale.StartPoint}:</span>
-          <input value={startPoint} onChange={changeStartPoint} />
+          <input value={startPoint} onChange={changeStartPoint} type="number" />
         </div>
 
         <button disabled={!startPoint} type="button" onClick={startAlgorithm} className="submitBtn">
