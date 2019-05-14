@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import ReactTable from 'react-table';
 import withFixedColumns from 'react-table-hoc-fixed-columns';
 import Graph from 'react-graph-vis';
@@ -22,7 +22,7 @@ const options = {
       type: 'cubicBezier'
     },
     arrows: {
-      to: { enabled: false, scaleFactor: 1, type: 'arrow' },
+      to: { enabled: true, scaleFactor: 1, type: 'arrow' },
       middle: { enabled: false, scaleFactor: 1, type: 'arrow' },
       from: { enabled: false, scaleFactor: 1, type: 'arrow' }
     }
@@ -38,6 +38,7 @@ let values = { nodes: [], edges: [] };
 
 const App = () => {
   const [defaultTableData, setDefaultTableData] = useState({});
+  const [nodesValues, setNodesValues] = useState([]);
   const [file, setFileData] = useState({});
   const [count, setCount] = useState(0);
   const [startPoint, setStartPoint] = useState(0);
@@ -47,14 +48,79 @@ const App = () => {
   const [network, setNetwork] = useState(undefined);
   const [downFile, setDownFile] = useState(values);
 
-  console.log(file);
-
   const columnsLength = columns.length;
   const showTable = Boolean(columnsLength);
 
   fileReader.onload = e => {
     setFileData(JSON.parse(e.target.result));
   };
+
+  const handleInputChange = useCallback((row, cell, value, id) => {
+    setInputsList(list => {
+      const element = list[row][cell];
+      element.value = value;
+      element.id = id;
+
+      return [...list];
+    });
+  }, []);
+
+  const changeCount = useCallback(
+    ({ target: { value: inputValue } }) => {
+      const value = Number(inputValue);
+
+      // TODO: ADD SOME WARNING ABOUT POSSIBLE BROWSER FREEZE
+      if (value < 100) {
+        if (value > columnsLength) {
+          const diff = value - columnsLength;
+          const dataDiff = value - firstData.length;
+          const valueArray = new Array(value).fill(null);
+
+          setFirstData(
+            addToArray(firstData, dataDiff).map((_, index) => {
+              const result = {};
+
+              valueArray.forEach((__, i) => {
+                const id = `${index + 1}/${i + 1}`;
+
+                result[i + 1] = (
+                  <input
+                    id={id}
+                    onChange={({ target: { value: edgeValue } }) =>
+                      handleInputChange(index, i, edgeValue, id)
+                    }
+                    defaultValue={defaultTableData[`${index + 1}:${i + 1}`]}
+                    type="number"
+                  />
+                );
+              });
+
+              result['0'] = index + 1;
+
+              return result;
+            })
+          );
+
+          setColumns(
+            fixedFirst(
+              addToArray(columns, diff + 1, index => ({
+                Header: `${columnsLength + index}`,
+                accessor: `${columnsLength + index}`,
+                style: { textAlign: 'center' }
+              }))
+            )
+          );
+        } else {
+          setColumns(columns.slice(0, value + 1));
+          setFirstData(firstData.slice(0, value));
+        }
+      }
+
+      setCount(inputValue);
+      setInputsList(createMatrix(Number(inputValue)));
+    },
+    [columns, columnsLength, defaultTableData, firstData, handleInputChange]
+  );
 
   useEffect(() => {
     if (Object.keys(file).length) {
@@ -111,7 +177,7 @@ const App = () => {
         )
       );
     }
-  }, [defaultTableData]);
+  }, [changeCount, count, defaultTableData, file, startPoint]);
 
   useEffect(() => {
     inputsList.forEach(row =>
@@ -119,18 +185,26 @@ const App = () => {
         .filter(({ value }) => value)
         .forEach(({ id, value }) => {
           const [start, end] = id.split('/');
-          const startElement = { id: start, label: start };
-          const endElement = { id: end, label: end };
+          const startElement = { id: start, label: nodesValues[Number(start - 1)] };
+          const endElement = { id: end, label: nodesValues[Number(end - 1)] };
 
           if (start === end && !values.nodes.some(({ id: eID }) => eID === end)) {
             values.nodes.push(startElement);
           } else {
             if (!values.nodes.some(({ id: eID }) => eID === start)) {
               values.nodes.push(startElement);
+            } else {
+              const nodeIndex = values.nodes.findIndex(({ id: eID }) => eID === start);
+
+              values.nodes[nodeIndex] = startElement;
             }
 
             if (!values.nodes.some(({ id: eID }) => eID === end)) {
               values.nodes.push(endElement);
+            } else {
+              const nodeIndex = values.nodes.findIndex(({ id: eID }) => eID === end);
+
+              values.nodes[nodeIndex] = endElement;
             }
           }
 
@@ -163,78 +237,10 @@ const App = () => {
         )
       );
     }
-  }, [inputsList]);
+  }, [count, inputsList, network, nodesValues, startPoint]);
 
-  const changeCount = ({ target: { value: inputValue } }) => {
-    const value = Number(inputValue);
-
-    // TODO: ADD SOME WARNING ABOUT POSSIBLE BROWSER FREEZE
-    if (value < 100) {
-      if (value > columnsLength) {
-        const diff = value - columnsLength;
-        const dataDiff = value - firstData.length;
-        const valueArray = new Array(value).fill(null);
-
-        setFirstData(
-          addToArray(firstData, dataDiff).map((_, index) => {
-            const result = {};
-
-            valueArray.forEach((__, i) => {
-              const id = `${index + 1}/${i + 1}`;
-
-              result[i + 1] = (
-                <input
-                  id={id}
-                  onChange={({ target: { value: edgeValue } }) =>
-                    handleInputChange(index, i, edgeValue, id)
-                  }
-                  defaultValue={defaultTableData[`${index + 1}:${i + 1}`]}
-                  type="number"
-                />
-              );
-            });
-
-            result['0'] = index + 1;
-
-            return result;
-          })
-        );
-
-        setColumns(
-          fixedFirst(
-            addToArray(columns, diff + 1, index => ({
-              Header: `${columnsLength + index}`,
-              accessor: `${columnsLength + index}`,
-              style: { textAlign: 'center' }
-            }))
-          )
-        );
-      } else {
-        setColumns(columns.slice(0, value + 1));
-        setFirstData(firstData.slice(0, value));
-      }
-    }
-
-    setCount(inputValue);
-    setInputsList(createMatrix(Number(inputValue)));
-  };
-
-  const handleInputChange = (row, cell, value, id) => {
-    setInputsList(list => {
-      const element = list[row][cell];
-      element.value = value;
-      element.id = id;
-
-      return [...list];
-    });
-  };
-
-  const changeStartPoint = ({ target: { value } }) => {
-    setStartPoint(Number(value));
-  };
-
-  const startAlgorithm = () => {
-    const newValue = calculate(values, startPoint);
+  const startAlgorithm = useCallback(() => {
+    const newValue = calculate(values);
 
     if (network) {
       network.setData(newValue);
@@ -246,7 +252,28 @@ const App = () => {
         )
       );
     }
-  };
+  }, [count, network, startPoint]);
+
+  const inputs = useMemo(
+    () =>
+      new Array(Number(count)).fill(0).map((_, index) => (
+        <>
+          Точка {index}:{' '}
+          <input
+            onChange={({ target: { value } }) =>
+              setNodesValues(old => {
+                const newValues = [...old];
+
+                newValues[index] = value;
+
+                return newValues;
+              })
+            }
+          />
+        </>
+      )),
+    [count]
+  );
 
   return (
     <div className="App">
@@ -255,12 +282,15 @@ const App = () => {
           <span className="label">{locale.PointsCount}:</span>
           <input value={count} onChange={changeCount} type="number" />
         </div>
-        <div className="inputWrap">
-          <span className="label">{locale.StartPoint}:</span>
-          <input value={startPoint} onChange={changeStartPoint} type="number" />
-        </div>
 
-        <button disabled={!startPoint} type="button" onClick={startAlgorithm} className="submitBtn">
+        {inputs}
+
+        <button
+          disabled={nodesValues.filter(v => v).length !== Number(count)}
+          type="button"
+          onClick={startAlgorithm}
+          className="submitBtn"
+        >
           {locale.StartVisualization}
         </button>
         <div style={{ display: 'inline-block' }}>
@@ -276,7 +306,7 @@ const App = () => {
               href={`data:text/json;charset=utf-8,${downFile}`}
               download="out.json"
             >
-              DOWNLOAD DATA
+              ЗАВАНТАЖИТИ
             </a>
           )}
         </div>
