@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import { Link } from 'react-router-dom';
 import ReactTable from 'react-table';
 import withFixedColumns from 'react-table-hoc-fixed-columns';
 import Graph from 'react-graph-vis';
@@ -293,6 +294,14 @@ const App = () => {
   return (
     <div className="App">
       <div className="wrap">
+        <Link to="/">
+          <button
+            type="button"
+            className="submitBtn"
+          >
+            Повернутись на головно сторінку
+          </button>
+        </Link>
         <div className="inputWrap">
           <span className="label">{locale.PointsCount}:</span>
           <input value={count} onChange={changeCount} type="number" />
