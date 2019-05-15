@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import ReactTable from 'react-table';
@@ -121,14 +122,14 @@ const App = () => {
       setCount(inputValue);
       setInputsList(createMatrix(Number(inputValue)));
     },
-    [columnsLength, JSON.stringify(defaultTableData), handleInputChange]
+    [columnsLength, defaultTableData, handleInputChange]
   );
 
   useEffect(() => {
     if (Object.keys(file).length) {
       values = { nodes: [], edges: [] };
       changeCount({ target: { value: file.nodes.length } });
-      let nodesL = [];
+      const nodesL = [];
       file.nodes.forEach((node, index) => {
         nodesL.push(node.label);
         if (typeof node === 'object') {
@@ -295,10 +296,7 @@ const App = () => {
     <div className="App">
       <div className="wrap">
         <Link to="/">
-          <button
-            type="button"
-            className="submitBtn"
-          >
+          <button type="button" className="submitBtn">
             Повернутись на головно сторінку
           </button>
         </Link>
@@ -310,7 +308,7 @@ const App = () => {
         {inputs}
 
         <button
-          //disabled={nodesValues.filter(v => v).length !== Number(count)}
+          // disabled={nodesValues.filter(v => v).length !== Number(count)}
           type="button"
           onClick={startAlgorithm}
           className="submitBtn"

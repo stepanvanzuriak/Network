@@ -1,3 +1,4 @@
+/* eslint-disable  */
 function bfs(rGraph, s, t, parent) {
   const visited = [];
   const queue = [];
@@ -41,7 +42,7 @@ function calculate(values) {
   */
   console.log('values', values);
 
-  let newEdges = [];
+  const newEdges = [];
   let positiveSum = 0;
   let negatieSum = 0;
 
@@ -67,7 +68,7 @@ function calculate(values) {
   const graph = [];
 
   for (let i = 0; i < values.nodes.length; i++) {
-    let tmp = [];
+    const tmp = [];
 
     for (let j = 0; j < values.nodes.length; j++) {
       tmp.push(0);
@@ -236,6 +237,6 @@ const graph = [
   [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
 ];
 
-//console.log(`The maximum possible flow is ${calculate(graph, 0, 12)}`);
+// console.log(`The maximum possible flow is ${calculate(graph, 0, 12)}`);
 
 export default calculate;
