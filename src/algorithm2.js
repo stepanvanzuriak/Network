@@ -42,6 +42,8 @@ function calculate(values) {
   console.log('values', values);
 
   let newEdges = [];
+  let positiveSum = 0;
+  let negatieSum = 0;
 
   values.nodes.forEach(val => {
     if (!isNaN(Number(val.label))) {
@@ -154,6 +156,18 @@ function calculate(values) {
   console.log(dGraph);
   // Return the overall flow
 
+  values.nodes.forEach(e => {
+    if (!isNaN(Number(e.label))) {
+      if (Number(e.label) > 0) {
+        console.log(Number(e.label));
+        positiveSum += Number(e.label);
+      } else {
+        console.log(Number(e.label));
+        negatieSum += Number(e.label);
+      }
+    }
+  });
+
   values.edges = values.edges.map(val => {
     const { from, to } = val;
     let x = Number(from);
@@ -180,13 +194,25 @@ function calculate(values) {
         const { id } = v;
 
         if (Number(id) === x || Number(id) === y || v.id === 'T' || v.id === 'S') {
+          if (v.id === 'T') {
+            console.log(negatieSum);
+            return { ...v, color: { background: 'red' }, label: `${'T'} ${negatieSum}` };
+          }
+          if (v.id === 'S') {
+            return { ...v, color: { background: 'red' }, label: `${'S'} ${positiveSum}` };
+          }
+
+          console.log(positiveSum);
           return { ...v, color: { background: 'red' } };
         }
 
-        return v;
+        return { ...v };
       });
     }
-    return { ...val, label: `${val.label} ${extraData}` };
+    if (Number(val.label) === eval(extraData)) {
+      return { ...val, label: `(${val.label}) ${extraData}`, color: { color: 'green' }, width: 3 };
+    }
+    return { ...val, label: `(${val.label}) ${extraData}` };
   });
 
   console.log(values.nodes);

@@ -301,7 +301,7 @@ const App = () => {
         {inputs}
 
         <button
-          disabled={nodesValues.filter(v => v).length !== Number(count)}
+          //disabled={nodesValues.filter(v => v).length !== Number(count)}
           type="button"
           onClick={startAlgorithm}
           className="submitBtn"
