@@ -1,0 +1,19 @@
+.wrap {
+    min-height: calc(100vh - 60px);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+.header img {
+    max-height: 200px;
+    max-width: 200px;
+}
+
+.content {
+
+}
+
+.footer {
+
+}
