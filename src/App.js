@@ -66,22 +66,23 @@ const App = () => {
   }, []);
 
   const changeCount = useCallback(
-    ({ target: { value: inputValue } }) => {
+    ({ target: { value: inputValue } }, dataParam = null) => {
       const value = Number(inputValue);
 
       // TODO: ADD SOME WARNING ABOUT POSSIBLE BROWSER FREEZE
       if (value < 100) {
         if (value > columnsLength) {
-          const diff = value - columnsLength;
-          const dataDiff = value - firstData.length;
           const valueArray = new Array(value).fill(null);
 
-          setFirstData(
-            addToArray(firstData, dataDiff).map((_, index) => {
+          setFirstData(d =>
+            addToArray(d, value - d.length).map((_, index) => {
               const result = {};
 
               valueArray.forEach((__, i) => {
                 const id = `${index + 1}/${i + 1}`;
+                console.log('defaultTableData', defaultTableData);
+                const source = dataParam || defaultTableData;
+                const data = source[`${index + 1}:${i + 1}`];
 
                 result[i + 1] = (
                   <input
@@ -89,7 +90,7 @@ const App = () => {
                     onChange={({ target: { value: edgeValue } }) =>
                       handleInputChange(index, i, edgeValue, id)
                     }
-                    defaultValue={defaultTableData[`${index + 1}:${i + 1}`]}
+                    defaultValue={data}
                     type="number"
                   />
                 );
@@ -101,25 +102,25 @@ const App = () => {
             })
           );
 
-          setColumns(
+          setColumns(c =>
             fixedFirst(
-              addToArray(columns, diff + 1, index => ({
-                Header: `${columnsLength + index}`,
-                accessor: `${columnsLength + index}`,
+              addToArray(c, value - c.length + 1, index => ({
+                Header: `${c.length + index}`,
+                accessor: `${c.length + index}`,
                 style: { textAlign: 'center' }
               }))
             )
           );
         } else {
-          setColumns(columns.slice(0, value + 1));
-          setFirstData(firstData.slice(0, value));
+          setColumns(c => c.slice(0, value + 1));
+          setFirstData(d => d.slice(0, value));
         }
       }
 
       setCount(inputValue);
       setInputsList(createMatrix(Number(inputValue)));
     },
-    [columns, columnsLength, defaultTableData, firstData, handleInputChange]
+    [columnsLength, JSON.stringify(defaultTableData), handleInputChange]
   );
 
   useEffect(() => {
@@ -164,19 +165,37 @@ const App = () => {
         }
       });
 
-      changeCount({ target: { value: file.nodes.length } });
-
       setDefaultTableData(
-        file.edges.reduce((acc, edge) => ({ ...acc, [`${edge.from}:${edge.to}`]: edge.value }), {})
+        file.edges.reduce(
+          (acc, edge) => ({ ...acc, [`${edge.from}:${edge.to}`]: Number(edge.value) }),
+          {}
+        )
       );
 
       setDownFile(
         encodeURIComponent(
-          JSON.stringify(createFileFormat({ nodes: values.nodes, edges: values.edges }, count))
+          JSON.stringify(
+            createFileFormat(
+              { nodes: values.nodes, edges: values.edges },
+              file.nodes.filter(({ id }) => id !== 'T' && id !== 'S').length
+            )
+          )
+        )
+      );
+
+      changeCount(
+        {
+          target: { value: file.nodes.filter(({ id }) => id !== 'T' && id !== 'S').length }
+        },
+        file.edges.reduce(
+          (acc, edge) => ({ ...acc, [`${edge.from}:${edge.to}`]: Number(edge.value) }),
+          {}
         )
       );
     }
-  }, [file]);
+  }, [changeCount, file]);
+
+  console.log(defaultTableData);
 
   useEffect(() => {
     inputsList.forEach(row =>
