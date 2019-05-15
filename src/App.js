@@ -41,15 +41,15 @@ const App = () => {
   const [nodesValues, setNodesValues] = useState([]);
   const [file, setFileData] = useState({});
   const [count, setCount] = useState(0);
-  const [startPoint, setStartPoint] = useState(0);
+
   const [columns, setColumns] = useState([]);
   const [firstData, setFirstData] = useState([]);
   const [inputsList, setInputsList] = useState([]);
   const [network, setNetwork] = useState(undefined);
   const [downFile, setDownFile] = useState(values);
 
-  const columnsLength = columns.length;
-  const showTable = Boolean(columnsLength);
+  const columnsLength = useMemo(() => columns.length, [columns.length]);
+  const showTable = useMemo(() => Boolean(columnsLength), [columnsLength]);
 
   fileReader.onload = e => {
     setFileData(JSON.parse(e.target.result));
@@ -124,30 +124,25 @@ const App = () => {
 
   useEffect(() => {
     if (Object.keys(file).length) {
-      setDefaultTableData(
-        file.edges.reduce((acc, edge) => ({ ...acc, [`${edge.from}:${edge.to}`]: edge.value }), {})
-      );
       values = { nodes: [], edges: [] };
-    }
-  }, [file]);
-
-  useEffect(() => {
-    if (Object.keys(file).length) {
       changeCount({ target: { value: file.nodes.length } });
-      setStartPoint(file.startPoint);
-
-      file.nodes.forEach(node => {
+      let nodesL = [];
+      file.nodes.forEach((node, index) => {
+        nodesL.push(node.label);
         if (typeof node === 'object') {
           if (!values.nodes.some(({ id }) => id === node.id)) {
-            values.nodes.push({ id: node.id, label: node.label });
+            values.nodes.push({ id: node.id, label: node.label, color: node.color });
           }
         } else {
           // eslint-disable-next-line no-lonely-if
           if (!values.nodes.some(({ id }) => id === node)) {
-            values.nodes.push({ id: node, label: node });
+            values.nodes.push({ id: node, label: node, color: node.color });
           }
         }
       });
+
+      setNodesValues(nodesL.map(v => Number(v)));
+
       file.edges.forEach(edge => {
         if (!values.edges.some(({ from, to }) => from === edge.from && to === edge.to)) {
           values.edges.push({
@@ -169,15 +164,19 @@ const App = () => {
         }
       });
 
+      changeCount({ target: { value: file.nodes.length } });
+
+      setDefaultTableData(
+        file.edges.reduce((acc, edge) => ({ ...acc, [`${edge.from}:${edge.to}`]: edge.value }), {})
+      );
+
       setDownFile(
         encodeURIComponent(
-          JSON.stringify(
-            createFileFormat({ nodes: values.nodes, edges: values.edges }, startPoint, count)
-          )
+          JSON.stringify(createFileFormat({ nodes: values.nodes, edges: values.edges }, count))
         )
       );
     }
-  }, [changeCount, count, defaultTableData, file, startPoint]);
+  }, [file]);
 
   useEffect(() => {
     inputsList.forEach(row =>
@@ -231,13 +230,11 @@ const App = () => {
       network.setData(values);
       setDownFile(
         encodeURIComponent(
-          JSON.stringify(
-            createFileFormat({ nodes: values.nodes, edges: values.edges }, startPoint, count)
-          )
+          JSON.stringify(createFileFormat({ nodes: values.nodes, edges: values.edges }, count))
         )
       );
     }
-  }, [count, inputsList, network, nodesValues, startPoint]);
+  }, [count, inputsList, network, nodesValues]);
 
   const startAlgorithm = useCallback(() => {
     const newValue = calculate(values);
@@ -246,13 +243,11 @@ const App = () => {
       network.setData(newValue);
       setDownFile(
         encodeURIComponent(
-          JSON.stringify(
-            createFileFormat({ nodes: newValue.nodes, edges: newValue.edges }, startPoint, count)
-          )
+          JSON.stringify(createFileFormat({ nodes: newValue.nodes, edges: newValue.edges }, count))
         )
       );
     }
-  }, [count, network, startPoint]);
+  }, [count, network]);
 
   const inputs = useMemo(
     () =>
@@ -260,6 +255,7 @@ const App = () => {
         <>
           Точка {index}:{' '}
           <input
+            value={nodesValues[index]}
             onChange={({ target: { value } }) =>
               setNodesValues(old => {
                 const newValues = [...old];
@@ -272,7 +268,7 @@ const App = () => {
           />
         </>
       )),
-    [count]
+    [count, nodesValues]
   );
 
   return (
