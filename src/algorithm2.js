@@ -49,9 +49,9 @@ function calculate(values) {
   values.nodes.forEach(val => {
     if (!isNaN(Number(val.label))) {
       if (Number(val.label) > 0) {
-        newEdges.push({ from: 'S', to: val.id, label: `${Math.abs(Number(val.id))}` });
+        newEdges.push({ from: 'S', to: val.id, label: `${Math.abs(Number(val.label))}` });
       } else {
-        newEdges.push({ from: val.id, to: 'T', label: `${Math.abs(Number(val.id))}` });
+        newEdges.push({ from: val.id, to: 'T', label: `${Math.abs(Number(val.label))}` });
       }
     }
   });
@@ -154,7 +154,7 @@ function calculate(values) {
     console.log(updated.reverse(), pathFlow);
   }
 
-  console.log(dGraph);
+  console.log(graph);
   // Return the overall flow
 
   values.nodes.forEach(e => {
@@ -216,9 +216,9 @@ function calculate(values) {
     return { ...val, label: `(${val.label}) ${extraData}` };
   });
 
-  console.log(values.nodes);
+  console.log(values.nodes, maxFlow);
 
-  return values;
+  return [values, maxFlow];
 }
 
 const graph = [

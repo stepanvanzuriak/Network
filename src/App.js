@@ -43,6 +43,7 @@ const App = () => {
   const [nodesValues, setNodesValues] = useState([]);
   const [file, setFileData] = useState({});
   const [count, setCount] = useState(0);
+  const [flow, setMaxFlow] = useState(0);
 
   const [columns, setColumns] = useState([]);
   const [firstData, setFirstData] = useState([]);
@@ -122,7 +123,8 @@ const App = () => {
       setCount(inputValue);
       setInputsList(createMatrix(Number(inputValue)));
     },
-    [columnsLength, defaultTableData, handleInputChange]
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [columnsLength, JSON.stringify(defaultTableData), handleInputChange]
   );
 
   useEffect(() => {
@@ -258,9 +260,10 @@ const App = () => {
   }, [count, inputsList, network, nodesValues]);
 
   const startAlgorithm = useCallback(() => {
-    const newValue = calculate(values);
+    const [newValue, maxFlow] = calculate(values);
 
     if (network) {
+      setMaxFlow(maxFlow);
       network.setData(newValue);
       setDownFile(
         encodeURIComponent(
@@ -274,7 +277,7 @@ const App = () => {
     () =>
       new Array(Number(count)).fill(0).map((_, index) => (
         <>
-          Точка {index}:{' '}
+          Точка {index + 1}:{' '}
           <input
             value={nodesValues[index]}
             onChange={({ target: { value } }) =>
@@ -342,7 +345,7 @@ const App = () => {
             defaultPageSize={5}
             className="-striped"
           />
-
+          <p>Величина максимального потоку: {flow}</p>
           <Graph graph={values} getNetwork={setNetwork} options={options} />
         </>
       )}
