@@ -50,7 +50,7 @@ function calculate(values) {
     if (!isNaN(Number(val.label))) {
       if (Number(val.label) > 0) {
         newEdges.push({ from: 'S', to: val.id, label: `${Math.abs(Number(val.label))}` });
-      } else {
+      } else if (Number(val.label) < 0) {
         newEdges.push({ from: val.id, to: 'T', label: `${Math.abs(Number(val.label))}` });
       }
     }

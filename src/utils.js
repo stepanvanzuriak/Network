@@ -26,8 +26,8 @@ export const fixedFirst = array => {
   return resultArray;
 };
 
-export const createFileFormat = (values, nodeCount) => {
-  const file = { nodeCount, nodes: [], edges: [] };
+export const createFileFormat = (values, nodeCount, maxFlow) => {
+  const file = { nodeCount, maxFlow, nodes: [], edges: [] };
 
   values.nodes.forEach(({ id, label, color }) => file.nodes.push({ id, label, color }));
 

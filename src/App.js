@@ -43,7 +43,7 @@ const App = () => {
   const [nodesValues, setNodesValues] = useState([]);
   const [file, setFileData] = useState({});
   const [count, setCount] = useState(0);
-  const [flow, setMaxFlow] = useState(0);
+  const [maxFlow, setMaxFlow] = useState(0);
 
   const [columns, setColumns] = useState([]);
   const [firstData, setFirstData] = useState([]);
@@ -53,6 +53,8 @@ const App = () => {
 
   const columnsLength = useMemo(() => columns.length, [columns.length]);
   const showTable = useMemo(() => Boolean(columnsLength), [columnsLength]);
+
+  console.log(file);
 
   fileReader.onload = e => {
     setFileData(JSON.parse(e.target.result));
@@ -131,6 +133,7 @@ const App = () => {
     if (Object.keys(file).length) {
       values = { nodes: [], edges: [] };
       changeCount({ target: { value: file.nodes.length } });
+
       const nodesL = [];
       file.nodes.forEach((node, index) => {
         nodesL.push(node.label);
@@ -175,13 +178,16 @@ const App = () => {
           {}
         )
       );
+      console.log(file.maxFlow);
+      setMaxFlow(file.maxFlow);
 
       setDownFile(
         encodeURIComponent(
           JSON.stringify(
             createFileFormat(
               { nodes: values.nodes, edges: values.edges },
-              file.nodes.filter(({ id }) => id !== 'T' && id !== 'S').length
+              file.nodes.filter(({ id }) => id !== 'T' && id !== 'S').length,
+              file.maxFlow
             )
           )
         )
@@ -253,25 +259,29 @@ const App = () => {
       network.setData(values);
       setDownFile(
         encodeURIComponent(
-          JSON.stringify(createFileFormat({ nodes: values.nodes, edges: values.edges }, count))
+          JSON.stringify(
+            createFileFormat({ nodes: values.nodes, edges: values.edges }, count, maxFlow)
+          )
         )
       );
     }
-  }, [count, inputsList, network, nodesValues]);
+  }, [count, inputsList, maxFlow, network, nodesValues]);
 
   const startAlgorithm = useCallback(() => {
-    const [newValue, maxFlow] = calculate(values);
+    const [newValue, flow] = calculate(values);
 
     if (network) {
-      setMaxFlow(maxFlow);
+      setMaxFlow(flow);
       network.setData(newValue);
       setDownFile(
         encodeURIComponent(
-          JSON.stringify(createFileFormat({ nodes: newValue.nodes, edges: newValue.edges }, count))
+          JSON.stringify(
+            createFileFormat({ nodes: newValue.nodes, edges: newValue.edges }, count, maxFlow)
+          )
         )
       );
     }
-  }, [count, network]);
+  }, [count, maxFlow, network]);
 
   const inputs = useMemo(
     () =>
@@ -345,7 +355,7 @@ const App = () => {
             defaultPageSize={5}
             className="-striped"
           />
-          <p>Величина максимального потоку: {flow}</p>
+          <p>Величина максимального потоку: {maxFlow}</p>
           <Graph graph={values} getNetwork={setNetwork} options={options} />
         </>
       )}
